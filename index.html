@@ -1,101 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>isp-diag - check your internet connection</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ebebeb">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
+  <meta name="description" content="Comprehensive internet diagnostics - IP, DNS, speed, security, and more">
+  <title>isp-diag - internet diagnostics</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>isp-diag</h1>
-            <button class="help-btn" onclick="showHelp()" title="Help">[?]</button>
-        </header>
+  <header>
+    <div><h1><a href="/">isp-diag</a></h1></div>
+    <div></div>
+    <div><a href="#" id="help-toggle" title="Help">[?]</a></div>
+  </header>
 
-        <main>
-            <section class="info-block">
-                <h2>Your IP addresses:</h2>
-                <div id="ip-addresses" class="data detecting">detecting...</div>
-            </section>
+  <main id="content">
 
-            <section class="info-block">
-                <h2>Your ISP:</h2>
-                <div id="isp-info" class="data detecting">detecting...</div>
-            </section>
-
-            <section class="info-block">
-                <h2>Your DNS resolvers:</h2>
-                <div id="dns-resolvers" class="data detecting">detecting...</div>
-            </section>
-
-            <section class="info-block">
-                <h2>DNS resolvers specify your IP subnet (ECS):</h2>
-                <div id="ecs-status" class="data detecting">detecting...</div>
-            </section>
-
-            <section class="info-block">
-                <h2>Your DNS security:</h2>
-                <div id="dns-security" class="data detecting">detecting...</div>
-            </section>
-
-            <section class="info-block">
-                <h2>Connection security:</h2>
-                <div id="connection-security" class="data detecting">detecting...</div>
-            </section>
-
-            <section class="info-block">
-                <h2>Network capabilities:</h2>
-                <div id="network-caps" class="data detecting">detecting...</div>
-            </section>
-
-            <section class="info-block">
-                <h2>Speed test:</h2>
-                <div id="speed-test" class="data">
-                    <button class="test-btn" onclick="runSpeedTest()">[run test]</button>
-                    <span id="speed-result"></span>
-                </div>
-            </section>
-
-            <section class="info-block">
-                <h2>WebRTC leak test:</h2>
-                <div id="webrtc-test" class="data detecting">detecting...</div>
-            </section>
-        </main>
-
-        <footer>
-            <p class="github-link">
-                <a href="https://github.com/Rexhjdog/isp-diag" target="_blank">
-                    Star us on GitHub
-                </a>
-            </p>
-        </footer>
-    </div>
-
-    <div class="counter">
-        dns: <span id="dns-counter">0</span>
-    </div>
-
-    <div id="help-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>About isp-diag</h2>
-            <p>This tool checks your internet connection and reveals information about your ISP, DNS configuration, and potential privacy leaks.</p>
-            <h3>What we check:</h3>
-            <ul>
-                <li><strong>IP addresses</strong> - Your public IPv4 and IPv6 addresses</li>
-                <li><strong>ISP information</strong> - Your Internet Service Provider</li>
-                <li><strong>DNS resolvers</strong> - Which DNS servers you're using</li>
-                <li><strong>ECS (EDNS Client Subnet)</strong> - Whether your DNS leaks your subnet</li>
-                <li><strong>DNS security</strong> - DNSSEC and encrypted DNS support</li>
-                <li><strong>Connection security</strong> - HTTPS and TLS status</li>
-                <li><strong>Network capabilities</strong> - IPv6, HTTP/3, DoH support</li>
-                <li><strong>Speed test</strong> - Download speed measurement</li>
-                <li><strong>WebRTC</strong> - Check for IP leaks via WebRTC</li>
-            </ul>
-            <button class="close-btn" onclick="hideHelp()">[close]</button>
+    <section id="section-ip">
+      <div class="section-title">Your IP addresses:</div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subtitle">IPv4</div>
+          <div class="entry" id="ip-v4"><span class="pending anim-pulse">detecting...</span></div>
         </div>
-    </div>
+        <div class="subsection">
+          <div class="subtitle">IPv6</div>
+          <div class="entry" id="ip-v6"><span class="pending anim-pulse">detecting...</span></div>
+        </div>
+      </div>
+    </section>
 
-    <script src="app.js"></script>
+    <section id="section-isp">
+      <div class="section-title">Your ISP:</div>
+      <div class="section-body">
+        <div class="entry" id="isp-info"><span class="pending anim-pulse">detecting...</span></div>
+      </div>
+    </section>
+
+    <section id="section-dns">
+      <div class="section-title">Your DNS resolvers:</div>
+      <div class="section-body">
+        <div class="entry" id="dns-resolver-info"><span class="pending anim-pulse">detecting...</span></div>
+      </div>
+    </section>
+
+    <section id="section-dns-leak">
+      <div class="section-title">DNS leak test:</div>
+      <div class="section-body">
+        <div class="entry" id="dns-leak-result"><span class="pending anim-pulse">testing...</span></div>
+      </div>
+    </section>
+
+    <section id="section-ecs">
+      <div class="section-title">EDNS Client Subnet (<a href="https://en.wikipedia.org/wiki/EDNS_Client_Subnet" title="EDNS Client Subnet">ECS</a>):</div>
+      <div class="section-body">
+        <div class="entry" id="ecs-result"><span class="pending anim-pulse">detecting...</span></div>
+      </div>
+    </section>
+
+    <section id="section-dns-security">
+      <div class="section-title">DNS security:</div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subtitle">DNSSEC</div>
+          <div class="entry" id="dnssec-result"><span class="pending anim-pulse">detecting...</span></div>
+        </div>
+        <div class="subsection">
+          <div class="subtitle">DNS-over-HTTPS (DoH)</div>
+          <div class="entry" id="doh-result"><span class="pending anim-pulse">detecting...</span></div>
+        </div>
+        <div class="subsection">
+          <div class="subtitle">DNS-over-TLS (DoT)</div>
+          <div class="entry" id="dot-result"><span class="pending anim-pulse">detecting...</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-connection">
+      <div class="section-title">Connection security:</div>
+      <div class="section-body">
+        <div class="entry" id="conn-https"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="conn-tls"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="conn-hsts"><span class="pending anim-pulse">detecting...</span></div>
+      </div>
+    </section>
+
+    <section id="section-network">
+      <div class="section-title">Network capabilities:</div>
+      <div class="section-body">
+        <div class="entry" id="net-ipv6"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="net-http3"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="net-ech"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="net-connection"><span class="pending anim-pulse">detecting...</span></div>
+      </div>
+    </section>
+
+    <section id="section-latency">
+      <div class="section-title">Latency:</div>
+      <div class="section-body">
+        <div class="entry" id="latency-result"><span class="pending anim-pulse">measuring...</span></div>
+      </div>
+    </section>
+
+    <section id="section-speed">
+      <div class="section-title">Speed test:</div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subtitle">Download</div>
+          <div class="entry" id="speed-download"><a href="#" id="speed-download-btn" class="action-link">[run test]</a> <span id="speed-download-result"></span></div>
+        </div>
+        <div class="subsection">
+          <div class="subtitle">Upload</div>
+          <div class="entry" id="speed-upload"><a href="#" id="speed-upload-btn" class="action-link">[run test]</a> <span id="speed-upload-result"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-webrtc">
+      <div class="section-title">WebRTC leak test:</div>
+      <div class="section-body">
+        <div class="entry" id="webrtc-result"><span class="pending anim-pulse">detecting...</span></div>
+      </div>
+    </section>
+
+    <section id="section-done" style="display:none">
+      <div class="section-title">
+        Like this tool? Star us on <a href="https://github.com/Rexhjdog/isp-diag">GitHub</a>.
+      </div>
+    </section>
+
+  </main>
+
+  <div id="help-overlay" class="hidden">
+    <section>
+      <div class="section-title">About isp-diag</div>
+      <div class="section-body">
+        <div class="entry">Comprehensive internet diagnostics tool.</div>
+        <div class="entry">All tests run locally in your browser.</div>
+        <div class="entry">No personal data is collected or stored.</div>
+      </div>
+    </section>
+    <section>
+      <div class="section-title">What we check:</div>
+      <div class="section-body">
+        <div class="entry"><span class="bold">IP addresses</span> - Your public IPv4 and IPv6 addresses with geolocation</div>
+        <div class="entry"><span class="bold">ISP</span> - Your Internet Service Provider, ASN, and location</div>
+        <div class="entry"><span class="bold">DNS resolvers</span> - Which DNS servers handle your queries</div>
+        <div class="entry"><span class="bold">DNS leak test</span> - Whether DNS queries are routed correctly</div>
+        <div class="entry"><span class="bold">ECS</span> - Whether your DNS leaks your IP subnet</div>
+        <div class="entry"><span class="bold">DNS security</span> - DNSSEC validation, DoH, and DoT support</div>
+        <div class="entry"><span class="bold">Connection security</span> - HTTPS, TLS version, and HSTS</div>
+        <div class="entry"><span class="bold">Network capabilities</span> - IPv6, HTTP/3, ECH, connection info</div>
+        <div class="entry"><span class="bold">Latency</span> - Round-trip time measurements with jitter</div>
+        <div class="entry"><span class="bold">Speed test</span> - Download and upload bandwidth</div>
+        <div class="entry"><span class="bold">WebRTC</span> - Check for IP address leaks via WebRTC</div>
+      </div>
+    </section>
+    <section>
+      <div class="section-body">
+        <div class="entry"><a href="https://github.com/Rexhjdog/isp-diag" target="_blank">GitHub</a></div>
+        <div class="entry"><a href="#" id="help-close">[close]</a></div>
+      </div>
+    </section>
+  </div>
+
+  <footer id="statusbar">
+    <div class="statusbar-left">
+      <span id="sb-latency" class="sb-indicator" title="Average latency">--</span>
+      <span id="sb-ipv6" class="sb-indicator" title="IPv6 support">IPv6</span>
+      <span id="sb-dnssec" class="sb-indicator" title="DNSSEC validation">DNSSEC</span>
+      <span id="sb-https" class="sb-indicator" title="Connection security">HTTPS</span>
+      <span id="sb-doh" class="sb-indicator" title="DNS-over-HTTPS">DoH</span>
+    </div>
+    <div>
+      <span class="nowrap" title="DNS-related requests made">dns: <span id="dns-counter" class="c-muted">0</span></span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
