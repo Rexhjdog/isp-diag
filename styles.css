@@ -15,6 +15,12 @@
   --blue: #06989a;
   --indigo: #3465a4;
   --violet: #75507b;
+  --banner-good-bg: #e8f5e9;
+  --banner-good-fg: #2e7d32;
+  --banner-warn-bg: #fff8e1;
+  --banner-warn-fg: #f57f17;
+  --banner-bad-bg: #ffebee;
+  --banner-bad-fg: #c62828;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +37,12 @@
     --blue: #34e2e2;
     --indigo: #729fcf;
     --violet: #ad7fa8;
+    --banner-good-bg: #1b3a1b;
+    --banner-good-fg: #8ae234;
+    --banner-warn-bg: #3a351b;
+    --banner-warn-fg: #fce94f;
+    --banner-bad-bg: #3a1b1b;
+    --banner-bad-fg: #ef2929;
   }
 }
 
@@ -136,6 +148,66 @@ section {
   padding-left: 4ch;
 }
 
+/* Privacy banner (Mullvad-inspired) */
+.privacy-banner {
+  margin: 0 2ch;
+  padding: 0.8em 2ch;
+  display: flex;
+  align-items: center;
+  gap: 2ch;
+  border: 1px solid var(--fg-muted);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.privacy-banner.privacy-good {
+  background-color: var(--banner-good-bg);
+  border-color: var(--banner-good-fg);
+}
+
+.privacy-banner.privacy-warn {
+  background-color: var(--banner-warn-bg);
+  border-color: var(--banner-warn-fg);
+}
+
+.privacy-banner.privacy-bad {
+  background-color: var(--banner-bad-bg);
+  border-color: var(--banner-bad-fg);
+}
+
+.privacy-score {
+  font-size: 1.6em;
+  font-weight: bold;
+  min-width: 4ch;
+}
+
+.privacy-good .privacy-score {
+  color: var(--banner-good-fg);
+}
+
+.privacy-warn .privacy-score {
+  color: var(--banner-warn-fg);
+}
+
+.privacy-bad .privacy-score {
+  color: var(--banner-bad-fg);
+}
+
+.privacy-summary {
+  font-size: 0.95em;
+}
+
+.privacy-good .privacy-summary {
+  color: var(--banner-good-fg);
+}
+
+.privacy-warn .privacy-summary {
+  color: var(--banner-warn-fg);
+}
+
+.privacy-bad .privacy-summary {
+  color: var(--banner-bad-fg);
+}
+
 /* Mobile */
 @media (max-width: 767px) {
   .section-title {
@@ -152,6 +224,17 @@ section {
 
   .section-body > .entry {
     padding-left: 2ch;
+  }
+
+  .privacy-banner {
+    margin: 0 1ch;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5em;
+  }
+
+  .privacy-score {
+    font-size: 1.3em;
   }
 }
 

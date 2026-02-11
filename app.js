@@ -1,4 +1,5 @@
 // isp-diag - Comprehensive Internet Diagnostics
+// Enhanced with Mullvad VPN-inspired privacy checks
 // Aesthetic inspired by dnscheck.tools
 
 let dnsQueryCount = 0;
@@ -31,9 +32,61 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// --- Privacy score tracking ---
+
+const privacyChecks = {
+  vpn: null,       // true = connected via VPN
+  dnsLeak: null,   // true = no leak
+  webrtc: null,    // true = no leak
+  blacklist: null,  // true = not blacklisted
+  https: null,     // true = using HTTPS
+  dnssec: null,    // true = DNSSEC validated
+  fingerprint: null // true = no fingerprint leak
+};
+
+function updatePrivacyBanner() {
+  const banner = document.getElementById('privacy-banner');
+  const scoreEl = document.getElementById('privacy-score');
+  const summaryEl = document.getElementById('privacy-summary');
+  if (!banner || !scoreEl || !summaryEl) return;
+
+  const results = Object.values(privacyChecks).filter(v => v !== null);
+  if (results.length === 0) return;
+
+  const passed = results.filter(v => v === true).length;
+  const total = results.length;
+  const score = Math.round((passed / total) * 100);
+
+  scoreEl.textContent = `${score}%`;
+
+  if (score >= 80) {
+    banner.className = 'privacy-banner privacy-good';
+    summaryEl.innerHTML = 'Your connection looks <span class="bold">well-protected</span>';
+  } else if (score >= 50) {
+    banner.className = 'privacy-banner privacy-warn';
+    summaryEl.innerHTML = 'Your connection has <span class="bold">some privacy concerns</span>';
+  } else {
+    banner.className = 'privacy-banner privacy-bad';
+    summaryEl.innerHTML = 'Your connection has <span class="bold">significant privacy risks</span>';
+  }
+
+  // Update status bar VPN indicator
+  const sbVpn = document.getElementById('sb-vpn');
+  if (sbVpn) {
+    if (privacyChecks.vpn === true) {
+      sbVpn.textContent = 'VPN';
+      setStatusBar('sb-vpn', 'good');
+    } else if (privacyChecks.vpn === false) {
+      sbVpn.textContent = 'VPN';
+      setStatusBar('sb-vpn', 'bad');
+    }
+  }
+}
+
 // --- Shared data ---
 
 let cachedIPData = null;
+let cachedMullvadData = null;
 
 async function fetchIPData() {
   countDNS();
@@ -44,6 +97,253 @@ async function fetchIPData() {
   } catch {
     return null;
   }
+}
+
+async function fetchMullvadData() {
+  try {
+    countDNS();
+    const response = await fetch('https://am.i.mullvad.net/json');
+    cachedMullvadData = await response.json();
+    return cachedMullvadData;
+  } catch {
+    return null;
+  }
+}
+
+// --- VPN Detection (Mullvad-inspired) ---
+
+async function checkVPNStatus(mullvadData, ipData) {
+  const vpnIndicators = [];
+  let isMullvad = false;
+  let isVPN = false;
+
+  // Check Mullvad API data
+  if (mullvadData) {
+    isMullvad = mullvadData.mullvad_exit_ip === true;
+
+    if (isMullvad) {
+      isVPN = true;
+      vpnIndicators.push('mullvad exit node');
+    }
+
+    // Heuristic: check if organization suggests a VPN/datacenter
+    const org = (mullvadData.organization || '').toLowerCase();
+    const vpnKeywords = ['vpn', 'mullvad', 'nordvpn', 'expressvpn', 'surfshark', 'proton',
+      'private internet', 'cyberghost', 'windscribe', 'ivpn', 'hide.me',
+      'hosting', 'datacenter', 'data center', 'cloud', 'server', 'hetzner',
+      'digitalocean', 'linode', 'vultr', 'ovh', 'leaseweb'];
+    for (const kw of vpnKeywords) {
+      if (org.includes(kw)) {
+        isVPN = true;
+        vpnIndicators.push(`organization: ${mullvadData.organization}`);
+        break;
+      }
+    }
+  }
+
+  // Cross-check: compare Mullvad IP with ipapi IP
+  if (mullvadData && ipData && mullvadData.ip && ipData.ip) {
+    if (mullvadData.ip !== ipData.ip) {
+      vpnIndicators.push('IP mismatch between providers');
+    }
+  }
+
+  // Cross-check: compare locations
+  if (mullvadData && ipData) {
+    const mullvadCountry = (mullvadData.country || '').toLowerCase();
+    const ipapiCountry = (ipData.country_name || '').toLowerCase();
+    if (mullvadCountry && ipapiCountry && mullvadCountry !== ipapiCountry) {
+      vpnIndicators.push(`location mismatch: ${mullvadData.country} vs ${ipData.country_name}`);
+    }
+  }
+
+  // Build display
+  let html = '';
+
+  if (isMullvad) {
+    html += '<span class="c-green">connected via Mullvad VPN</span>';
+    html += `<br><span class="c-muted">exit node: ${escapeHtml(mullvadData.ip || 'unknown')}</span>`;
+    html += `<br><span class="c-muted">server: ${escapeHtml(mullvadData.organization || 'unknown')}</span>`;
+    html += `<br><span class="c-muted">location: ${escapeHtml(mullvadData.city || '?')}, ${escapeHtml(mullvadData.country || '?')}</span>`;
+  } else if (isVPN) {
+    html += '<span class="c-green">VPN detected</span> (not Mullvad)';
+    if (mullvadData) {
+      html += `<br><span class="c-muted">exit IP: ${escapeHtml(mullvadData.ip || 'unknown')}</span>`;
+      html += `<br><span class="c-muted">provider: ${escapeHtml(mullvadData.organization || 'unknown')}</span>`;
+    }
+  } else {
+    html += '<span class="c-red">no VPN detected</span>';
+    html += '<br><span class="c-muted">your traffic is not routed through a known VPN provider</span>';
+    if (mullvadData) {
+      html += `<br><span class="c-muted">your IP: ${escapeHtml(mullvadData.ip || 'unknown')} (${escapeHtml(mullvadData.organization || 'unknown')})</span>`;
+    }
+  }
+
+  if (vpnIndicators.length > 0) {
+    html += `<br><span class="c-muted">indicators: ${vpnIndicators.map(i => escapeHtml(i)).join(', ')}</span>`;
+  }
+
+  setEntry('vpn-status', html);
+  privacyChecks.vpn = isVPN;
+  updatePrivacyBanner();
+}
+
+// --- IP Blacklist Check (Mullvad-inspired) ---
+
+async function checkBlacklist(mullvadData) {
+  if (!mullvadData) {
+    setEntry('blacklist-result', '<span class="c-muted">unable to check (Mullvad API unavailable)</span>');
+    return;
+  }
+
+  const bl = mullvadData.blacklisted;
+
+  if (!bl) {
+    setEntry('blacklist-result', '<span class="c-muted">blacklist data not available</span>');
+    return;
+  }
+
+  let html = '';
+
+  if (bl.blacklisted) {
+    html += '<span class="c-red">your IP is blacklisted</span>';
+    privacyChecks.blacklist = false;
+  } else {
+    html += '<span class="c-green">not blacklisted</span>';
+    privacyChecks.blacklist = true;
+  }
+
+  if (bl.results && bl.results.length > 0) {
+    html += '<br>';
+    html += bl.results.map(r => {
+      const status = r.blacklisted
+        ? `<span class="c-red">listed</span>`
+        : `<span class="c-green">clean</span>`;
+      const name = r.link
+        ? `<a href="${escapeHtml(r.link)}" target="_blank" rel="noopener">${escapeHtml(r.name)}</a>`
+        : escapeHtml(r.name);
+      return `<span class="c-muted">${name}: ${status}</span>`;
+    }).join('  ');
+  }
+
+  setEntry('blacklist-result', html);
+  updatePrivacyBanner();
+}
+
+// --- Browser Privacy Checks ---
+
+async function checkBrowserPrivacy() {
+  const results = [];
+
+  // Canvas fingerprint detection
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 200;
+    canvas.height = 50;
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillText('fingerprint test', 2, 2);
+    const dataUrl = canvas.toDataURL();
+
+    // A blank or uniform canvas suggests fingerprint protection
+    if (dataUrl === 'data:,' || dataUrl.length < 100) {
+      results.push('canvas: <span class="c-green">protected</span> (blank or blocked)');
+    } else {
+      results.push('canvas: <span class="c-yellow">fingerprintable</span>');
+    }
+  } catch {
+    results.push('canvas: <span class="c-green">blocked</span>');
+  }
+
+  // Timezone leak
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (tz) {
+    results.push(`timezone: <span class="c-yellow">${escapeHtml(tz)}</span> (visible to websites)`);
+  } else {
+    results.push('timezone: <span class="c-green">hidden</span>');
+  }
+
+  // Language leak
+  const lang = navigator.language || navigator.userLanguage;
+  if (lang) {
+    results.push(`language: <span class="c-yellow">${escapeHtml(lang)}</span> (visible to websites)`);
+  }
+
+  // Screen resolution leak
+  const screenInfo = `${screen.width}x${screen.height}`;
+  results.push(`screen: <span class="c-yellow">${screenInfo}</span> (visible to websites)`);
+
+  // WebGL renderer (fingerprinting vector)
+  try {
+    const glCanvas = document.createElement('canvas');
+    const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
+    if (gl) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        results.push(`WebGL: <span class="c-yellow">${escapeHtml(renderer)}</span>`);
+      } else {
+        results.push('WebGL renderer: <span class="c-green">hidden</span>');
+      }
+    } else {
+      results.push('WebGL: <span class="c-green">disabled</span>');
+    }
+  } catch {
+    results.push('WebGL: <span class="c-green">blocked</span>');
+  }
+
+  // Do Not Track
+  const dnt = navigator.doNotTrack;
+  if (dnt === '1') {
+    results.push('Do Not Track: <span class="c-green">enabled</span>');
+  } else {
+    results.push('Do Not Track: <span class="c-red">not set</span>');
+  }
+
+  // Determine overall fingerprint protection
+  const hasProtection = results.some(r => r.includes('c-green'));
+  privacyChecks.fingerprint = hasProtection;
+
+  setEntry('browser-privacy-result', results.join('<br>'));
+  updatePrivacyBanner();
+}
+
+// --- Port Connectivity Test ---
+
+async function checkPortConnectivity() {
+  const targets = [
+    { port: 80, label: 'HTTP', url: 'http://cloudflare.com' },
+    { port: 443, label: 'HTTPS', url: 'https://cloudflare.com' },
+    { port: 853, label: 'DNS-over-TLS', url: null },
+    { port: 8080, label: 'Alt HTTP', url: null }
+  ];
+
+  const results = [];
+
+  for (const t of targets) {
+    if (t.url) {
+      try {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 3000);
+        const start = performance.now();
+        await fetch(t.url, { mode: 'no-cors', signal: controller.signal, cache: 'no-store' });
+        const elapsed = (performance.now() - start).toFixed(0);
+        results.push(`port ${t.port} (${t.label}): <span class="c-green">reachable</span> <span class="c-muted">${elapsed}ms</span>`);
+      } catch (e) {
+        if (e.name === 'AbortError') {
+          results.push(`port ${t.port} (${t.label}): <span class="c-yellow">timeout</span>`);
+        } else {
+          results.push(`port ${t.port} (${t.label}): <span class="c-red">blocked or unreachable</span>`);
+        }
+      }
+    } else {
+      // Can't directly test non-HTTP ports from browser
+      results.push(`port ${t.port} (${t.label}): <span class="c-muted">cannot test from browser</span>`);
+    }
+  }
+
+  setEntry('port-result', results.join('<br>'));
 }
 
 // --- IP Addresses ---
@@ -157,11 +457,14 @@ async function runDNSLeakTest() {
   if (unreachable.length === 0) {
     html += '<span class="c-green">all providers reachable</span> - ';
     html += 'queries routed through your configured resolver';
+    privacyChecks.dnsLeak = true;
   } else if (reachable.length === 0) {
     html += '<span class="c-red">unable to reach DNS providers</span>';
+    privacyChecks.dnsLeak = false;
   } else {
     html += '<span class="c-yellow">partial connectivity</span> - ';
     html += `${unreachable.map(r => r.name).join(', ')} unreachable`;
+    privacyChecks.dnsLeak = true;
   }
 
   html += '<br><span class="c-muted">';
@@ -171,6 +474,7 @@ async function runDNSLeakTest() {
   html += '</span>';
 
   setEntry('dns-leak-result', html);
+  updatePrivacyBanner();
 }
 
 // --- ECS ---
@@ -210,14 +514,18 @@ async function checkDNSSEC() {
     if (data.AD) {
       setEntry('dnssec-result', '<span class="c-green">validated</span> - DNS responses are authenticated');
       setStatusBar('sb-dnssec', 'good');
+      privacyChecks.dnssec = true;
     } else {
       setEntry('dnssec-result', '<span class="c-yellow">not validated</span> - DNS responses are not authenticated');
       setStatusBar('sb-dnssec', 'warn');
+      privacyChecks.dnssec = false;
     }
   } catch {
     setEntry('dnssec-result', '<span class="c-red">check failed</span>');
     setStatusBar('sb-dnssec', 'bad');
+    privacyChecks.dnssec = false;
   }
+  updatePrivacyBanner();
 }
 
 async function checkDoH() {
@@ -247,6 +555,9 @@ function checkConnectionSecurity() {
     ? 'HTTPS: <span class="c-green">active</span>'
     : 'HTTPS: <span class="c-red">not secure</span>');
   setStatusBar('sb-https', isHTTPS ? 'good' : 'bad');
+
+  privacyChecks.https = isHTTPS;
+  updatePrivacyBanner();
 
   setEntry('conn-tls', 'TLS: <span class="c-blue">1.3 (estimated)</span>');
 
@@ -436,6 +747,11 @@ async function checkWebRTC() {
         if (matches) {
           matches.forEach(ip => ips.add(ip));
         }
+        // Also check for IPv6 addresses
+        const v6matches = ice.candidate.candidate.match(/([0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}/g);
+        if (v6matches) {
+          v6matches.forEach(ip => ips.add(ip));
+        }
       } else if (!ice.candidate && !completed) {
         completed = true;
         displayWebRTCResults(ips);
@@ -453,6 +769,8 @@ async function checkWebRTC() {
     }, 5000);
   } catch {
     setEntry('webrtc-result', '<span class="c-muted">WebRTC not available or blocked</span>');
+    privacyChecks.webrtc = true; // blocked = good for privacy
+    updatePrivacyBanner();
   }
 }
 
@@ -463,11 +781,14 @@ function displayWebRTCResults(ips) {
       `<span class="c-red">leak detected</span> - IPs revealed: ${ipList}` +
       '<br><span class="c-muted">consider disabling WebRTC or using a VPN extension</span>'
     );
+    privacyChecks.webrtc = false;
   } else {
     setEntry('webrtc-result',
       '<span class="c-green">no leak detected</span> - your real IP is not exposed via WebRTC'
     );
+    privacyChecks.webrtc = true;
   }
+  updatePrivacyBanner();
 }
 
 // --- Help ---
@@ -503,11 +824,16 @@ document.getElementById('speed-upload-btn').addEventListener('click', (e) => {
 // --- Initialize ---
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Phase 1: fetch shared IP data
-  const ipData = await fetchIPData();
+  // Phase 1: fetch shared data (IP + Mullvad in parallel)
+  const [ipData, mullvadData] = await Promise.all([
+    fetchIPData(),
+    fetchMullvadData()
+  ]);
 
   // Phase 2: run all diagnostics in parallel
   await Promise.all([
+    checkVPNStatus(mullvadData, ipData),
+    checkBlacklist(mullvadData),
     displayIPAddresses(ipData),
     displayISP(ipData),
     detectDNSResolvers(),
@@ -519,7 +845,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkConnectionSecurity(),
     checkNetworkCapabilities(),
     measureLatency(),
-    checkWebRTC()
+    checkWebRTC(),
+    checkBrowserPrivacy(),
+    checkPortConnectivity()
   ]);
 
   // Show done message
