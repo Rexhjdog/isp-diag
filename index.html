@@ -3,436 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISP-Diag | Advanced Network Diagnostics</title>
+    <title>isp-diag - check your internet connection</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>ISP-Diag</h1>
-            <p class="subtitle">Advanced Network & ISP Diagnostic Tools</p>
-            <div class="connection-status">
-                <span class="status-dot" id="connectionDot"></span>
-                <span id="connectionStatus">Checking connection...</span>
-            </div>
+            <h1>isp-diag</h1>
+            <button class="help-btn" onclick="showHelp()" title="Help">[?]</button>
         </header>
 
-        <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="overview">Overview</button>
-            <button class="tab-btn" data-tab="dns">DNS Analysis</button>
-            <button class="tab-btn" data-tab="speed">Speed Test</button>
-            <button class="tab-btn" data-tab="throttling">Throttling Check</button>
-            <button class="tab-btn" data-tab="routing">Route Analysis</button>
-            <button class="tab-btn" data-tab="security">Security</button>
-        </nav>
+        <main>
+            <section class="info-block">
+                <h2>Your IP addresses:</h2>
+                <div id="ip-addresses" class="data detecting">detecting...</div>
+            </section>
 
-        <!-- Overview Tab -->
-        <section id="overview" class="tab-content active">
-            <div class="dashboard-grid">
-                <div class="card">
-                    <h2>Connection Info</h2>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>IPv4 Address</label>
-                            <span id="ipv4" class="value">Detecting...</span>
-                        </div>
-                        <div class="info-item">
-                            <label>IPv6 Address</label>
-                            <span id="ipv6" class="value">Detecting...</span>
-                        </div>
-                        <div class="info-item">
-                            <label>ISP</label>
-                            <span id="isp" class="value">Detecting...</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Location</label>
-                            <span id="location" class="value">Detecting...</span>
-                        </div>
-                        <div class="info-item">
-                            <label>User Agent</label>
-                            <span id="userAgent" class="value">-</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Connection Type</label>
-                            <span id="connectionType" class="value">Detecting...</span>
-                        </div>
-                    </div>
+            <section class="info-block">
+                <h2>Your ISP:</h2>
+                <div id="isp-info" class="data detecting">detecting...</div>
+            </section>
+
+            <section class="info-block">
+                <h2>Your DNS resolvers:</h2>
+                <div id="dns-resolvers" class="data detecting">detecting...</div>
+            </section>
+
+            <section class="info-block">
+                <h2>DNS resolvers specify your IP subnet (ECS):</h2>
+                <div id="ecs-status" class="data detecting">detecting...</div>
+            </section>
+
+            <section class="info-block">
+                <h2>Your DNS security:</h2>
+                <div id="dns-security" class="data detecting">detecting...</div>
+            </section>
+
+            <section class="info-block">
+                <h2>Connection security:</h2>
+                <div id="connection-security" class="data detecting">detecting...</div>
+            </section>
+
+            <section class="info-block">
+                <h2>Network capabilities:</h2>
+                <div id="network-caps" class="data detecting">detecting...</div>
+            </section>
+
+            <section class="info-block">
+                <h2>Speed test:</h2>
+                <div id="speed-test" class="data">
+                    <button class="test-btn" onclick="runSpeedTest()">[run test]</button>
+                    <span id="speed-result"></span>
                 </div>
+            </section>
 
-                <div class="card">
-                    <h2>Quick Health Check</h2>
-                    <div class="health-status" id="healthStatus">
-                        <div class="health-item" id="dnsHealth">
-                            <span class="health-icon">🌐</span>
-                            <span class="health-label">DNS</span>
-                            <span class="health-value">Checking...</span>
-                        </div>
-                        <div class="health-item" id="latencyHealth">
-                            <span class="health-icon">⚡</span>
-                            <span class="health-label">Latency</span>
-                            <span class="health-value">Checking...</span>
-                        </div>
-                        <div class="health-item" id="securityHealth">
-                            <span class="health-icon">🔒</span>
-                            <span class="health-label">Security</span>
-                            <span class="health-value">Checking...</span>
-                        </div>
-                        <div class="health-item" id="webrtcHealth">
-                            <span class="health-icon">📡</span>
-                            <span class="health-label">WebRTC</span>
-                            <span class="health-value">Checking...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card full-width">
-                    <h2>Network Capabilities</h2>
-                    <div class="capability-grid">
-                        <div class="capability" id="capIPv6">
-                            <span class="cap-icon">IPv6</span>
-                            <span class="cap-status">Checking...</span>
-                        </div>
-                        <div class="capability" id="capDoH">
-                            <span class="cap-icon">DoH</span>
-                            <span class="cap-status">Checking...</span>
-                        </div>
-                        <div class="capability" id="capDoT">
-                            <span class="cap-icon">DoT</span>
-                            <span class="cap-status">Checking...</span>
-                        </div>
-                        <div class="capability" id="capDNSSEC">
-                            <span class="cap-icon">DNSSEC</span>
-                            <span class="cap-status">Checking...</span>
-                        </div>
-                        <div class="capability" id="capESNI">
-                            <span class="cap-icon">ECH/ESNI</span>
-                            <span class="cap-status">Checking...</span>
-                        </div>
-                        <div class="capability" id="capQUIC">
-                            <span class="cap-icon">HTTP/3</span>
-                            <span class="cap-status">Checking...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- DNS Analysis Tab -->
-        <section id="dns" class="tab-content">
-            <div class="card">
-                <h2>DNS Resolver Analysis</h2>
-                <div class="dns-section">
-                    <h3>Your DNS Resolvers</h3>
-                    <div id="dnsResolvers" class="dns-list">
-                        <div class="loading">Detecting DNS resolvers...</div>
-                    </div>
-                </div>
-                
-                <div class="dns-section">
-                    <h3>DNS Leak Test</h3>
-                    <p class="description">Tests if your DNS requests are leaking outside your VPN/tunnel</p>
-                    <button class="btn primary" onclick="runDNSLeakTest()">Run DNS Leak Test</button>
-                    <div id="dnsLeakResults" class="results-container"></div>
-                </div>
-
-                <div class="dns-section">
-                    <h3>EDNS Client Subnet (ECS)</h3>
-                    <p class="description">Checks if your resolver sends your subnet to authoritative DNS servers</p>
-                    <div id="ecsResults" class="results-container">
-                        <div class="loading">Checking ECS...</div>
-                    </div>
-                </div>
-
-                <div class="dns-section">
-                    <h3>DNSSEC Validation</h3>
-                    <div id="dnssecResults" class="results-container">
-                        <div class="loading">Testing DNSSEC...</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Speed Test Tab -->
-        <section id="speed" class="tab-content">
-            <div class="card">
-                <h2>Internet Speed Test</h2>
-                <div class="speed-intro">
-                    <p>Measures your actual download speed, upload speed, and latency using multiple test methods.</p>
-                </div>
-                
-                <div class="speed-display">
-                    <div class="speed-gauge">
-                        <div class="gauge-label">Download</div>
-                        <div class="gauge-value" id="downloadSpeed">0.0</div>
-                        <div class="gauge-unit">Mbps</div>
-                        <canvas id="downloadGauge" width="200" height="200"></canvas>
-                    </div>
-                    <div class="speed-gauge">
-                        <div class="gauge-label">Upload</div>
-                        <div class="gauge-value" id="uploadSpeed">0.0</div>
-                        <div class="gauge-unit">Mbps</div>
-                        <canvas id="uploadGauge" width="200" height="200"></canvas>
-                    </div>
-                    <div class="speed-gauge small">
-                        <div class="gauge-label">Latency</div>
-                        <div class="gauge-value" id="latency">0</div>
-                        <div class="gauge-unit">ms</div>
-                    </div>
-                    <div class="speed-gauge small">
-                        <div class="gauge-label">Jitter</div>
-                        <div class="gauge-value" id="jitter">0</div>
-                        <div class="gauge-unit">ms</div>
-                    </div>
-                </div>
-
-                <div class="speed-controls">
-                    <button class="btn primary large" id="startSpeedTest" onclick="startSpeedTest()">
-                        Start Speed Test
-                    </button>
-                    <button class="btn secondary" id="stopSpeedTest" onclick="stopSpeedTest()" disabled>
-                        Stop
-                    </button>
-                </div>
-
-                <div class="progress-bar" id="speedProgress">
-                    <div class="progress-fill" id="speedProgressFill"></div>
-                    <span class="progress-text" id="speedProgressText">Ready</span>
-                </div>
-
-                <div class="speed-servers">
-                    <h3>Test Servers</h3>
-                    <div id="serverList" class="server-list"></div>
-                </div>
-
-                <div class="speed-history">
-                    <h3>Test History</h3>
-                    <div id="speedHistoryChart"></div>
-                    <table id="speedHistoryTable" class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Download</th>
-                                <th>Upload</th>
-                                <th>Latency</th>
-                                <th>Server</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Throttling Detection Tab -->
-        <section id="throttling" class="tab-content">
-            <div class="card">
-                <h2>ISP Throttling Detection</h2>
-                <p class="description">Detects if your ISP is throttling specific types of traffic.</p>
-
-                <div class="throttle-tests">
-                    <div class="throttle-category">
-                        <h3>Video Streaming</h3>
-                        <p>Tests for throttling on popular streaming platforms</p>
-                        <div class="streaming-tests">
-                            <button class="btn test-btn" onclick="testStreaming('netflix')">
-                                <span class="icon">🎬</span>
-                                Netflix
-                            </button>
-                            <button class="btn test-btn" onclick="testStreaming('youtube')">
-                                <span class="icon">📺</span>
-                                YouTube
-                            </button>
-                            <button class="btn test-btn" onclick="testStreaming('disney')">
-                                <span class="icon">✨</span>
-                                Disney+
-                            </button>
-                            <button class="btn test-btn" onclick="testStreaming('hulu')">
-                                <span class="icon">📼</span>
-                                Hulu
-                            </button>
-                            <button class="btn test-btn" onclick="testStreaming('hbomax')">
-                                <span class="icon">🎭</span>
-                                HBO Max
-                            </button>
-                        </div>
-                        <div id="streamingResults" class="results-container"></div>
-                    </div>
-
-                    <div class="throttle-category">
-                        <h3>Protocol-Specific Tests</h3>
-                        <div class="protocol-tests">
-                            <div class="protocol-test" id="testHTTP">
-                                <span class="protocol-name">HTTP</span>
-                                <div class="protocol-status">Not tested</div>
-                                <button class="btn small" onclick="testProtocol('http')">Test</button>
-                            </div>
-                            <div class="protocol-test" id="testHTTPS">
-                                <span class="protocol-name">HTTPS</span>
-                                <div class="protocol-status">Not tested</div>
-                                <button class="btn small" onclick="testProtocol('https')">Test</button>
-                            </div>
-                            <div class="protocol-test" id="testQUIC">
-                                <span class="protocol-name">QUIC/HTTP3</span>
-                                <div class="protocol-status">Not tested</div>
-                                <button class="btn small" onclick="testProtocol('quic')">Test</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="throttle-category">
-                        <h3>Port-Specific Throttling</h3>
-                        <p>Tests common ports for shaping or blocking</p>
-                        <div class="port-tests" id="portTests">
-                            <div class="port-item" data-port="80">
-                                <span class="port-num">80</span>
-                                <span class="port-name">HTTP</span>
-                                <span class="port-status">-</span>
-                            </div>
-                            <div class="port-item" data-port="443">
-                                <span class="port-num">443</span>
-                                <span class="port-name">HTTPS</span>
-                                <span class="port-status">-</span>
-                            </div>
-                            <div class="port-item" data-port="8080">
-                                <span class="port-num">8080</span>
-                                <span class="port-name">Alt HTTP</span>
-                                <span class="port-status">-</span>
-                            </div>
-                        </div>
-                        <button class="btn primary" onclick="testAllPorts()">Test All Ports</button>
-                    </div>
-
-                    <div class="throttle-category">
-                        <h3>Deep Packet Inspection (DPI) Detection</h3>
-                        <p>Attempts to detect if your ISP is using DPI to analyze your traffic</p>
-                        <button class="btn primary" onclick="detectDPI()">Run DPI Detection</button>
-                        <div id="dpiResults" class="results-container"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Routing Analysis Tab -->
-        <section id="routing" class="tab-content">
-            <div class="card">
-                <h2>Routing Path Analysis</h2>
-                
-                <div class="route-controls">
-                    <div class="input-group">
-                        <label>Target Host</label>
-                        <input type="text" id="routeTarget" placeholder="e.g., google.com or 8.8.8.8" value="8.8.8.8">
-                    </div>
-                    <button class="btn primary" onclick="startTraceroute()">Analyze Route</button>
-                </div>
-
-                <div class="route-info" id="routeInfo">
-                    <div class="route-stats">
-                        <div class="stat">
-                            <label>Hops</label>
-                            <span id="hopCount">-</span>
-                        </div>
-                        <div class="stat">
-                            <label>Total Latency</label>
-                            <span id="totalLatency">-</span>
-                        </div>
-                        <div class="stat">
-                            <label>AS Path</label>
-                            <span id="asPath">-</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="route-visualization" id="routeViz">
-                    <div class="route-map">
-                        <canvas id="routeCanvas" width="800" height="300"></canvas>
-                    </div>
-                </div>
-
-                <div class="route-table-container">
-                    <table id="routeTable" class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Hop</th>
-                                <th>IP Address</th>
-                                <th>Hostname</th>
-                                <th>Location</th>
-                                <th>AS</th>
-                                <th>Latency</th>
-                                <th>Packet Loss</th>
-                            </tr>
-                        </thead>
-                        <tbody id="routeTableBody">
-                            <tr>
-                                <td colspan="7" class="empty">Click "Analyze Route" to start</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="route-analysis">
-                    <h3>Routing Analysis</h3>
-                    <div id="routeAnalysisResults" class="analysis-results"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Security Tab -->
-        <section id="security" class="tab-content">
-            <div class="card">
-                <h2>Security & Privacy Analysis</h2>
-
-                <div class="security-section">
-                    <h3>WebRTC Leak Test</h3>
-                    <p>Checks if WebRTC is revealing your real IP address</p>
-                    <div id="webrtcResults" class="results-container">
-                        <div class="loading">Checking WebRTC...</div>
-                    </div>
-                </div>
-
-                <div class="security-section">
-                    <h3>TLS/SSL Capabilities</h3>
-                    <div class="tls-info" id="tlsInfo">
-                        <div class="loading">Checking TLS...</div>
-                    </div>
-                </div>
-
-                <div class="security-section">
-                    <h3>Encrypted DNS Support</h3>
-                    <div class="dns-support">
-                        <div class="dns-type" id="dnsDoH">
-                            <span class="dns-label">DNS over HTTPS (DoH)</span>
-                            <span class="dns-status">Checking...</span>
-                        </div>
-                        <div class="dns-type" id="dnsDoT">
-                            <span class="dns-label">DNS over TLS (DoT)</span>
-                            <span class="dns-status">Checking...</span>
-                        </div>
-                        <div class="dns-type" id="dnsDoQ">
-                            <span class="dns-label">DNS over QUIC (DoQ)</span>
-                            <span class="dns-status">Checking...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="security-section">
-                    <h3>Browser Fingerprint</h3>
-                    <div class="fingerprint" id="browserFingerprint">
-                        <div class="fp-hash">
-                            <label>Unique Hash</label>
-                            <code id="fpHash">Calculating...</code>
-                        </div>
-                        <div class="fp-details" id="fpDetails"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
+            <section class="info-block">
+                <h2>WebRTC leak test:</h2>
+                <div id="webrtc-test" class="data detecting">detecting...</div>
+            </section>
+        </main>
 
         <footer>
-            <p>ISP-Diag - Open Source Network Diagnostics</p>
             <p class="github-link">
-                <a href="https://github.com/Rexhjdog/isp-diag" target="_blank">View on GitHub</a>
+                <a href="https://github.com/Rexhjdog/isp-diag" target="_blank">
+                    Star us on GitHub
+                </a>
             </p>
         </footer>
+    </div>
+
+    <div class="counter">
+        dns: <span id="dns-counter">0</span>
+    </div>
+
+    <div id="help-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>About isp-diag</h2>
+            <p>This tool checks your internet connection and reveals information about your ISP, DNS configuration, and potential privacy leaks.</p>
+            <h3>What we check:</h3>
+            <ul>
+                <li><strong>IP addresses</strong> - Your public IPv4 and IPv6 addresses</li>
+                <li><strong>ISP information</strong> - Your Internet Service Provider</li>
+                <li><strong>DNS resolvers</strong> - Which DNS servers you're using</li>
+                <li><strong>ECS (EDNS Client Subnet)</strong> - Whether your DNS leaks your subnet</li>
+                <li><strong>DNS security</strong> - DNSSEC and encrypted DNS support</li>
+                <li><strong>Connection security</strong> - HTTPS and TLS status</li>
+                <li><strong>Network capabilities</strong> - IPv6, HTTP/3, DoH support</li>
+                <li><strong>Speed test</strong> - Download speed measurement</li>
+                <li><strong>WebRTC</strong> - Check for IP leaks via WebRTC</li>
+            </ul>
+            <button class="close-btn" onclick="hideHelp()">[close]</button>
+        </div>
     </div>
 
     <script src="app.js"></script>
