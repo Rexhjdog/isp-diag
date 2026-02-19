@@ -50,6 +50,29 @@ body {
   min-height: 100vh;
 }
 
+/* Skip link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  width: auto;
+  height: auto;
+  padding: 1em 2ch;
+  background: var(--bg-header);
+  color: var(--fg);
+  text-align: center;
+}
+
 /* Links */
 a {
   color: inherit;
@@ -60,6 +83,11 @@ a {
 a:hover {
   font-weight: bold;
   text-decoration: underline;
+}
+
+a:focus-visible, button:focus-visible, .action-link:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 /* Fixed header */

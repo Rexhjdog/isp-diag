@@ -10,124 +10,133 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
+  <a href="#content" class="skip-link">Skip to content</a>
+  <header role="banner">
     <div><h1><a href="/">isp-diag</a></h1></div>
     <div></div>
     <div><a href="#" id="help-toggle" title="Help">[?]</a></div>
   </header>
 
-  <main id="content">
+  <main id="content" role="main">
 
-    <section id="section-ip">
+    <section id="section-ip" aria-label="IP addresses">
       <div class="section-title">Your IP addresses:</div>
       <div class="section-body">
         <div class="subsection">
           <div class="subtitle">IPv4</div>
-          <div class="entry" id="ip-v4"><span class="pending anim-pulse">detecting...</span></div>
+          <div class="entry" id="ip-v4" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
         </div>
         <div class="subsection">
           <div class="subtitle">IPv6</div>
-          <div class="entry" id="ip-v6"><span class="pending anim-pulse">detecting...</span></div>
+          <div class="entry" id="ip-v6" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
         </div>
       </div>
     </section>
 
-    <section id="section-isp">
+    <section id="section-isp" aria-label="ISP information">
       <div class="section-title">Your ISP:</div>
       <div class="section-body">
-        <div class="entry" id="isp-info"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="isp-info" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
       </div>
     </section>
 
-    <section id="section-dns">
+    <section id="section-dns" aria-label="DNS resolvers">
       <div class="section-title">Your DNS resolvers:</div>
       <div class="section-body">
-        <div class="entry" id="dns-resolver-info"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="dns-resolver-info" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
       </div>
     </section>
 
-    <section id="section-dns-leak">
+    <section id="section-dns-leak" aria-label="DNS leak test">
       <div class="section-title">DNS leak test:</div>
       <div class="section-body">
-        <div class="entry" id="dns-leak-result"><span class="pending anim-pulse">testing...</span></div>
+        <div class="entry" id="dns-leak-result" aria-live="polite"><span class="pending anim-pulse">testing...</span></div>
       </div>
     </section>
 
-    <section id="section-ecs">
+    <section id="section-ecs" aria-label="EDNS Client Subnet">
       <div class="section-title">EDNS Client Subnet (<a href="https://en.wikipedia.org/wiki/EDNS_Client_Subnet" title="EDNS Client Subnet">ECS</a>):</div>
       <div class="section-body">
-        <div class="entry" id="ecs-result"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="ecs-result" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
       </div>
     </section>
 
-    <section id="section-dns-security">
+    <section id="section-dns-security" aria-label="DNS security">
       <div class="section-title">DNS security:</div>
       <div class="section-body">
         <div class="subsection">
           <div class="subtitle">DNSSEC</div>
-          <div class="entry" id="dnssec-result"><span class="pending anim-pulse">detecting...</span></div>
+          <div class="entry" id="dnssec-result" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
         </div>
         <div class="subsection">
           <div class="subtitle">DNS-over-HTTPS (DoH)</div>
-          <div class="entry" id="doh-result"><span class="pending anim-pulse">detecting...</span></div>
+          <div class="entry" id="doh-result" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
         </div>
         <div class="subsection">
           <div class="subtitle">DNS-over-TLS (DoT)</div>
-          <div class="entry" id="dot-result"><span class="pending anim-pulse">detecting...</span></div>
+          <div class="entry" id="dot-result" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
         </div>
       </div>
     </section>
 
-    <section id="section-connection">
+    <section id="section-connection" aria-label="Connection security">
       <div class="section-title">Connection security:</div>
       <div class="section-body">
-        <div class="entry" id="conn-https"><span class="pending anim-pulse">detecting...</span></div>
-        <div class="entry" id="conn-tls"><span class="pending anim-pulse">detecting...</span></div>
-        <div class="entry" id="conn-hsts"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="conn-https" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="conn-tls" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="conn-hsts" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
       </div>
     </section>
 
-    <section id="section-network">
+    <section id="section-network" aria-label="Network capabilities">
       <div class="section-title">Network capabilities:</div>
       <div class="section-body">
-        <div class="entry" id="net-ipv6"><span class="pending anim-pulse">detecting...</span></div>
-        <div class="entry" id="net-http3"><span class="pending anim-pulse">detecting...</span></div>
-        <div class="entry" id="net-ech"><span class="pending anim-pulse">detecting...</span></div>
-        <div class="entry" id="net-connection"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="net-ipv6" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="net-http3" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="net-ech" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="net-connection" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
       </div>
     </section>
 
-    <section id="section-latency">
+    <section id="section-latency" aria-label="Latency">
       <div class="section-title">Latency:</div>
       <div class="section-body">
-        <div class="entry" id="latency-result"><span class="pending anim-pulse">measuring...</span></div>
+        <div class="entry" id="latency-result" aria-live="polite"><span class="pending anim-pulse">measuring...</span></div>
       </div>
     </section>
 
-    <section id="section-speed">
+    <section id="section-speed" aria-label="Speed test">
       <div class="section-title">Speed test:</div>
       <div class="section-body">
         <div class="subsection">
           <div class="subtitle">Download</div>
-          <div class="entry" id="speed-download"><a href="#" id="speed-download-btn" class="action-link">[run test]</a> <span id="speed-download-result"></span></div>
+          <div class="entry" id="speed-download" aria-live="polite"><a href="#" id="speed-download-btn" class="action-link" aria-label="Run download speed test">[run test]</a> <span id="speed-download-result"></span></div>
         </div>
         <div class="subsection">
           <div class="subtitle">Upload</div>
-          <div class="entry" id="speed-upload"><a href="#" id="speed-upload-btn" class="action-link">[run test]</a> <span id="speed-upload-result"></span></div>
+          <div class="entry" id="speed-upload" aria-live="polite"><a href="#" id="speed-upload-btn" class="action-link" aria-label="Run upload speed test">[run test]</a> <span id="speed-upload-result"></span></div>
         </div>
       </div>
     </section>
 
-    <section id="section-webrtc">
+    <section id="section-webrtc" aria-label="WebRTC leak test">
       <div class="section-title">WebRTC leak test:</div>
       <div class="section-body">
-        <div class="entry" id="webrtc-result"><span class="pending anim-pulse">detecting...</span></div>
+        <div class="entry" id="webrtc-result" aria-live="polite"><span class="pending anim-pulse">detecting...</span></div>
       </div>
     </section>
 
     <section id="section-done" style="display:none">
-      <div class="section-title">
-        Like this tool? Star us on <a href="https://github.com/Rexhjdog/isp-diag">GitHub</a>.
+      <div class="section-title">Export results:</div>
+      <div class="section-body">
+        <div class="entry">
+          <a href="#" id="export-json-btn" class="action-link" aria-label="Export results as JSON">[export JSON]</a>
+          &nbsp;
+          <a href="#" id="export-text-btn" class="action-link" aria-label="Export results as text">[export text]</a>
+        </div>
+        <div class="entry">
+          Like this tool? Star us on <a href="https://github.com/Rexhjdog/isp-diag">GitHub</a>.
+        </div>
       </div>
     </section>
 
@@ -166,7 +175,7 @@
     </section>
   </div>
 
-  <footer id="statusbar">
+  <footer id="statusbar" role="contentinfo">
     <div class="statusbar-left">
       <span id="sb-latency" class="sb-indicator" title="Average latency">--</span>
       <span id="sb-ipv6" class="sb-indicator" title="IPv6 support">IPv6</span>

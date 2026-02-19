@@ -37,13 +37,19 @@ let cachedIPData = null;
 
 async function fetchIPData() {
   countDNS();
-  try {
-    const response = await fetch('https://ipapi.co/json/');
-    cachedIPData = await response.json();
-    return cachedIPData;
-  } catch {
-    return null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 8000);
+      const response = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      cachedIPData = await response.json();
+      return cachedIPData;
+    } catch {
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
   }
+  return null;
 }
 
 // --- IP Addresses ---
@@ -248,7 +254,18 @@ function checkConnectionSecurity() {
     : 'HTTPS: <span class="c-red">not secure</span>');
   setStatusBar('sb-https', isHTTPS ? 'good' : 'bad');
 
-  setEntry('conn-tls', 'TLS: <span class="c-blue">1.3 (estimated)</span>');
+  // Detect TLS version from resource timing
+  const entries = performance.getEntriesByType('resource');
+  const tlsEntry = entries.find(e => e.nextHopProtocol);
+  if (tlsEntry) {
+    const proto = tlsEntry.nextHopProtocol;
+    const protoDisplay = proto === 'h3' ? 'HTTP/3 (QUIC/TLS 1.3)'
+      : proto === 'h2' ? 'HTTP/2 (TLS 1.2+)'
+      : proto;
+    setEntry('conn-tls', `TLS: <span class="c-blue">${escapeHtml(protoDisplay)}</span>`);
+  } else {
+    setEntry('conn-tls', 'TLS: <span class="c-blue">1.2+ (estimated)</span>');
+  }
 
   setEntry('conn-hsts', isHTTPS
     ? 'HSTS: <span class="c-green">enabled</span>'
@@ -272,11 +289,19 @@ async function checkNetworkCapabilities() {
   // HTTP/3
   setEntry('net-http3', 'HTTP/3: <span class="c-green">supported by browser</span>');
 
-  // ECH
-  const supportsECH = navigator.userAgent.includes('Firefox') || navigator.userAgent.includes('Chrome/1');
-  setEntry('net-ech', `ECH: ${supportsECH
-    ? '<span class="c-green">supported</span>'
-    : '<span class="c-yellow">limited</span>'}`);
+  // ECH - check via TLS extension support
+  try {
+    const echResp = await fetch('https://crypto.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
+    const echText = await echResp.text();
+    const sni = echText.match(/sni=(\w+)/);
+    if (sni && sni[1] === 'encrypted') {
+      setEntry('net-ech', 'ECH: <span class="c-green">active</span> - encrypted client hello in use');
+    } else {
+      setEntry('net-ech', 'ECH: <span class="c-yellow">not active</span> - plaintext SNI');
+    }
+  } catch {
+    setEntry('net-ech', 'ECH: <span class="c-muted">unable to determine</span>');
+  }
 
   // Connection info
   const conn = navigator.connection;
@@ -321,6 +346,8 @@ async function measureLatency() {
   const jitter = Math.sqrt(
     times.map(t => Math.pow(t - avg, 2)).reduce((a, b) => a + b, 0) / times.length
   ).toFixed(0);
+  const sorted = [...times].sort((a, b) => a - b);
+  const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1].toFixed(0);
 
   let avgColor = 'c-green';
   if (avg > 100) avgColor = 'c-yellow';
@@ -330,6 +357,7 @@ async function measureLatency() {
     `avg: <span class="${avgColor}">${avg}ms</span>  ` +
     `min: <span class="c-blue">${min}ms</span>  ` +
     `max: <span class="c-blue">${max}ms</span>  ` +
+    `p95: <span class="c-blue">${p95}ms</span>  ` +
     `jitter: <span class="c-blue">${jitter}ms</span>`
   );
 
@@ -354,25 +382,43 @@ async function runDownloadTest() {
   result.innerHTML = '';
 
   try {
-    const testUrl = 'https://speed.cloudflare.com/__down?bytes=10000000';
+    const testUrl = 'https://speed.cloudflare.com/__down?bytes=25000000';
     const startTime = performance.now();
 
     const response = await fetch(testUrl + '&nocache=' + Date.now(), { cache: 'no-store' });
     const reader = response.body.getReader();
     let received = 0;
+    let lastTime = startTime;
+    let lastReceived = 0;
+    const samples = [];
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       received += value.length;
-      const elapsed = (performance.now() - startTime) / 1000;
+      const now = performance.now();
+      const interval = now - lastTime;
+      if (interval >= 250) {
+        const intervalBytes = received - lastReceived;
+        samples.push((intervalBytes * 8) / (interval / 1000) / 1000000);
+        lastTime = now;
+        lastReceived = received;
+      }
+      const elapsed = (now - startTime) / 1000;
       const currentSpeed = ((received * 8) / 1000000) / elapsed;
       result.innerHTML = `<span class="c-muted">${currentSpeed.toFixed(1)} Mbps...</span>`;
     }
 
     const duration = (performance.now() - startTime) / 1000;
     const speedMbps = ((received * 8) / 1000000) / duration;
-    result.innerHTML = `<span class="c-green">${speedMbps.toFixed(1)} Mbps</span>`;
+    // Use median of interval samples if available for more accurate result
+    let displaySpeed = speedMbps;
+    if (samples.length >= 4) {
+      const sorted = [...samples].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      displaySpeed = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+    result.innerHTML = `<span class="c-green">${displaySpeed.toFixed(1)} Mbps</span> <span class="c-muted">(${(received / 1048576).toFixed(1)} MB transferred)</span>`;
   } catch {
     result.innerHTML = '<span class="c-red">test failed</span>';
   }
@@ -395,9 +441,11 @@ async function runUploadTest() {
   result.innerHTML = '';
 
   try {
-    const dataSize = 5 * 1024 * 1024; // 5MB
+    const dataSize = 10 * 1024 * 1024; // 10MB
     const data = new Uint8Array(dataSize);
     crypto.getRandomValues(data);
+
+    result.innerHTML = '<span class="c-muted">preparing...</span>';
 
     const startTime = performance.now();
     await fetch('https://speed.cloudflare.com/__up', {
@@ -407,7 +455,7 @@ async function runUploadTest() {
     });
     const duration = (performance.now() - startTime) / 1000;
     const speedMbps = ((dataSize * 8) / 1000000) / duration;
-    result.innerHTML = `<span class="c-green">${speedMbps.toFixed(1)} Mbps</span>`;
+    result.innerHTML = `<span class="c-green">${speedMbps.toFixed(1)} Mbps</span> <span class="c-muted">(${(dataSize / 1048576).toFixed(0)} MB transferred)</span>`;
   } catch {
     result.innerHTML = '<span class="c-red">test failed</span>';
   }
@@ -499,6 +547,63 @@ document.getElementById('speed-upload-btn').addEventListener('click', (e) => {
   e.preventDefault();
   runUploadTest();
 });
+
+// --- Export event listeners ---
+
+document.addEventListener('DOMContentLoaded', () => {
+  const jsonBtn = document.getElementById('export-json-btn');
+  const textBtn = document.getElementById('export-text-btn');
+  if (jsonBtn) jsonBtn.addEventListener('click', (e) => { e.preventDefault(); exportResults('json'); });
+  if (textBtn) textBtn.addEventListener('click', (e) => { e.preventDefault(); exportResults('text'); });
+});
+
+// --- Export Results ---
+
+function exportResults(format) {
+  const sections = document.querySelectorAll('#content > section:not(#section-done)');
+  const results = [];
+
+  sections.forEach(section => {
+    const title = section.querySelector('.section-title');
+    if (!title) return;
+    const entries = section.querySelectorAll('.entry');
+    const sectionData = {
+      section: title.textContent.trim().replace(/:$/, ''),
+      results: []
+    };
+    entries.forEach(entry => {
+      sectionData.results.push(entry.textContent.trim());
+    });
+    results.push(sectionData);
+  });
+
+  const timestamp = new Date().toISOString();
+
+  if (format === 'json') {
+    const json = JSON.stringify({ timestamp, diagnostics: results }, null, 2);
+    downloadFile(`isp-diag-${timestamp.slice(0, 10)}.json`, json, 'application/json');
+  } else {
+    let text = `ISP-Diag Results - ${timestamp}\n${'='.repeat(50)}\n\n`;
+    results.forEach(s => {
+      text += `${s.section}\n${'-'.repeat(s.section.length)}\n`;
+      s.results.forEach(r => { text += `  ${r}\n`; });
+      text += '\n';
+    });
+    downloadFile(`isp-diag-${timestamp.slice(0, 10)}.txt`, text, 'text/plain');
+  }
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 // --- Initialize ---
 
