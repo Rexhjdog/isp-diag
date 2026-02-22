@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ebebeb">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
+  <meta name="description" content="Agent-powered internet diagnostics - IP, DNS, speed, security, and more">
+  <title>isp-diag - agent-powered diagnostics</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div><h1><a href="/">isp-diag</a></h1></div>
+    <div class="header-badge">agent-powered</div>
+    <div><a href="#" id="help-toggle" title="Help">[?]</a></div>
+  </header>
+
+  <main id="content">
+
+    <section id="section-start">
+      <div class="section-body">
+        <div class="entry">
+          <a href="#" id="run-btn" class="action-link">[run diagnostics]</a>
+          <span id="run-status" class="c-muted"></span>
+        </div>
+      </div>
+    </section>
+
+    <div id="agent-results"></div>
+
+    <section id="section-speed" style="display:none">
+      <div class="section-title">Speed Test <span class="c-muted">(client-side)</span></div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subtitle">Download</div>
+          <div class="entry">
+            <a href="#" id="speed-download-btn" class="action-link">[run test]</a>
+            <span id="speed-download-result"></span>
+          </div>
+        </div>
+        <div class="subsection">
+          <div class="subtitle">Upload</div>
+          <div class="entry">
+            <a href="#" id="speed-upload-btn" class="action-link">[run test]</a>
+            <span id="speed-upload-result"></span>
+          </div>
+        </div>
+        <div id="speed-analysis" class="subsection" style="display:none">
+          <div class="subtitle">AI Analysis</div>
+          <div class="entry" id="speed-analysis-text"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-webrtc" style="display:none">
+      <div class="section-title">WebRTC Leak Test <span class="c-muted">(client-side)</span></div>
+      <div class="section-body">
+        <div class="entry" id="webrtc-result"><span class="pending anim-pulse">detecting...</span></div>
+      </div>
+    </section>
+
+    <section id="section-done" style="display:none">
+      <div class="section-title">
+        All diagnostics complete. Star us on <a href="https://github.com/Rexhjdog/isp-diag">GitHub</a>.
+      </div>
+    </section>
+
+  </main>
+
+  <div id="help-overlay" class="hidden">
+    <section>
+      <div class="section-title">About isp-diag v2.0</div>
+      <div class="section-body">
+        <div class="entry">Agent-powered internet diagnostics tool.</div>
+        <div class="entry">Each diagnostic category is handled by a specialized AI agent.</div>
+        <div class="entry">Agents use tools to run real network tests, then provide intelligent analysis.</div>
+        <div class="entry">Speed tests and WebRTC checks run locally in your browser.</div>
+      </div>
+    </section>
+    <section>
+      <div class="section-title">Agents:</div>
+      <div class="section-body">
+        <div class="entry"><span class="bold">IP & Location</span> - Identifies your IP, ISP, and geolocation</div>
+        <div class="entry"><span class="bold">DNS Analysis</span> - Tests DNSSEC, DoH, DNS leaks, and ECS</div>
+        <div class="entry"><span class="bold">Security</span> - Checks TLS, HTTPS, and security headers</div>
+        <div class="entry"><span class="bold">Network</span> - Tests IPv6, HTTP/3, and connectivity</div>
+        <div class="entry"><span class="bold">Performance</span> - Measures DNS and HTTP latency</div>
+      </div>
+    </section>
+    <section>
+      <div class="section-body">
+        <div class="entry"><a href="https://github.com/Rexhjdog/isp-diag" target="_blank">GitHub</a></div>
+        <div class="entry"><a href="#" id="help-close">[close]</a></div>
+      </div>
+    </section>
+  </div>
+
+  <footer id="statusbar">
+    <div class="statusbar-left">
+      <span id="sb-agents" class="sb-indicator" title="Agent status">agents: <span class="c-muted">idle</span></span>
+    </div>
+    <div>
+      <span class="nowrap" title="Agents completed">
+        done: <span id="agent-counter" class="c-muted">0/0</span>
+      </span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
