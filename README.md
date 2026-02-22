@@ -1,140 +1,126 @@
-# ISP-Diag
+# ISP-Diag v2.0
 
-Advanced Network & ISP Diagnostic Tools - A comprehensive web-based network diagnostics suite inspired by dnscheck.tools, with enhanced features for detecting ISP throttling, routing issues, and comprehensive security analysis.
+Agent-powered network & ISP diagnostic tool. Each diagnostic category is handled by a specialized AI agent that runs real network tests and provides intelligent analysis.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![JavaScript](https://img.shields.io/badge/javascript-vanilla-yellow.svg)
+![Node.js](https://img.shields.io/badge/node.js-20+-green.svg)
 
-## Features
+## Architecture
 
-### Overview Dashboard
-- **Connection Information**: IPv4/IPv6 detection, ISP identification, geolocation
-- **Network Health Check**: Real-time status of DNS, latency, security, and WebRTC
-- **Network Capabilities**: IPv6, DoH, DoT, DNSSEC, ESNI/ECH, HTTP/3 support detection
+```
+┌──────────────────────────────────────────────────┐
+│  Browser (Frontend)                              │
+│  ├─ SSE connection to /api/diagnose              │
+│  ├─ Client-side: speed tests, WebRTC leak test   │
+│  └─ Displays agent results as they stream in     │
+└──────────────────┬───────────────────────────────┘
+                   │ SSE
+┌──────────────────▼───────────────────────────────┐
+│  Express Server                                  │
+│  ├─ Spawns 5 agents in parallel                  │
+│  ├─ Each agent calls Claude with domain tools    │
+│  ├─ Agents run tools → analyze results → respond │
+│  └─ Results stream back via Server-Sent Events   │
+└──────────────────┬───────────────────────────────┘
+                   │
+┌──────────────────▼───────────────────────────────┐
+│  Agents (Claude + Tools)                         │
+│  ├─ IP & Location    → ipapi.co, IPv6 check     │
+│  ├─ DNS Analysis     → DoH, DNSSEC, ECS, leaks  │
+│  ├─ Security         → TLS, headers, certs      │
+│  ├─ Network          → IPv6, HTTP/3, connectivity│
+│  └─ Performance      → DNS latency, HTTP latency│
+└──────────────────────────────────────────────────┘
+```
 
-### DNS Analysis
-- **DNS Resolver Detection**: Identifies your current DNS servers
-- **DNS Leak Test**: Comprehensive testing for VPN/DNS leaks
-- **EDNS Client Subnet (ECS)**: Checks if your subnet is exposed to authoritative DNS
-- **DNSSEC Validation**: Verifies DNS security extensions
+## Agents
 
-### Speed Test
-- **Download Speed**: Multi-threaded download testing
-- **Upload Speed**: Upload bandwidth measurement
-- **Latency & Jitter**: Comprehensive ping analysis
-- **Test History**: Local storage of previous tests
-- **Visual Gauges**: Real-time speed visualization
+| Agent | Tools | What it checks |
+|-------|-------|----------------|
+| **IP & Location** | `lookup_ip`, `check_ipv6` | Public IP, ISP, geolocation, IPv6 availability |
+| **DNS Analysis** | `query_doh`, `check_dnssec`, `check_ecs`, `test_dns_leak` | DNSSEC validation, DoH support, ECS exposure, DNS leak testing |
+| **Security** | `check_tls`, `check_security_headers`, `check_certificate` | TLS/HTTPS config, security headers, certificate validity |
+| **Network** | `check_ipv6`, `check_protocol_support`, `check_connectivity` | IPv6, HTTP/3, multi-endpoint connectivity |
+| **Performance** | `measure_dns_latency`, `measure_http_latency` | DNS query latency, HTTP round-trip time, jitter |
 
-### ISP Throttling Detection
-- **Video Streaming Tests**: Netflix, YouTube, Disney+, Hulu, HBO Max
-- **Protocol-Specific Tests**: HTTP, HTTPS, QUIC/HTTP3 comparison
-- **Port Analysis**: Common port availability and shaping detection
-- **DPI Detection**: Deep Packet Inspection indicators
+Each agent is a Claude instance with domain-specific tools. The agent decides which tools to call, executes them, and provides analysis with recommendations.
 
-### Routing Analysis
-- **Visual Traceroute**: Graphical route visualization
-- **Hop Analysis**: Per-hop latency and packet loss
-- **AS Path Tracking**: Autonomous System routing information
-- **Routing Flaw Detection**: Identifies suboptimal paths and issues
+## Setup
 
-### Security & Privacy
-- **WebRTC Leak Test**: Detects real IP exposure
-- **TLS/SSL Analysis**: Connection security details
-- **Encrypted DNS Support**: DoH, DoT, DoQ capability checks
-- **Browser Fingerprinting**: Unique identifier generation
+```bash
+git clone https://github.com/Rexhjdog/isp-diag.git
+cd isp-diag
+npm install
+```
+
+Create a `.env` file with your Anthropic API key:
+
+```bash
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY
+```
 
 ## Usage
 
-### Local Development
-Simply open `index.html` in a modern web browser:
-
 ```bash
-# Clone the repository
-git clone https://github.com/Rexhjdog/isp-diag.git
-cd isp-diag
-
-# Open in browser
-open index.html
-# or
-python -m http.server 8000
+npm start
+# Server runs at http://localhost:3000
 ```
 
-### Deployment
-This is a static website that can be deployed to any web hosting service:
+Open the URL in your browser and click **[run diagnostics]** to deploy all agents.
 
-- GitHub Pages
-- Netlify
-- Vercel
-- Cloudflare Pages
-- Any static web host
+### How it works
 
-## Technical Details
+1. Click "run diagnostics" — frontend opens SSE connection to the server
+2. Server spawns 5 specialized agents in parallel
+3. Each agent calls Claude with its tools and system prompt
+4. Claude decides which tools to run, server executes them
+5. Agent analyzes raw results and provides insights
+6. Results stream back to the browser in real-time
+7. After agents finish, client-side tests (speed, WebRTC) become available
 
-### Pure Client-Side
-- No server required - runs entirely in the browser
-- Uses public APIs and standard web technologies
-- Local storage for test history
-- No data collection or tracking
+## Client-Side Tests
 
-### Browser Requirements
-- Modern browsers with ES6+ support
-- WebRTC API support for leak tests
-- Fetch API for network requests
-- Canvas API for visualizations
+Some tests must run in the browser (they test YOUR connection, not the server's):
 
-### APIs Used
-- ipapi.co for geolocation
-- Cloudflare DNS over HTTPS
-- Google DNS API
-- Various streaming endpoints for throttling tests
+- **Speed Test** — Download (10MB) and upload (5MB) via Cloudflare
+- **WebRTC Leak Test** — Checks if your real IP is exposed via WebRTC/STUN
+
+After running, speed results can optionally be sent to the server for AI analysis.
+
+## Project Structure
+
+```
+isp-diag/
+├── server.js              # Express server, SSE + analysis endpoints
+├── agents/
+│   ├── runner.js          # Generic agent execution loop
+│   ├── ip-agent.js        # IP & Location agent
+│   ├── dns-agent.js       # DNS Analysis agent
+│   ├── security-agent.js  # Security agent
+│   ├── network-agent.js   # Network Capabilities agent
+│   └── performance-agent.js # Performance agent
+├── public/
+│   ├── index.html         # Frontend markup
+│   ├── styles.css         # Monospace terminal aesthetic
+│   └── app.js             # SSE client, speed tests, WebRTC
+├── package.json
+├── .env.example
+└── .gitignore
+```
 
 ## Privacy
 
-This tool:
-- Runs entirely in your browser
-- Does not store any data on servers
-- Only uses local storage for your test history
-- Does not track or fingerprint users
-- All network tests are initiated by your browser
+- Network diagnostics run server-side (your IP is used for lookups)
+- Speed tests and WebRTC checks run in your browser
+- No data is stored or tracked
+- AI analysis is stateless (no conversation history)
 
-## Limitations
+## Requirements
 
-Due to browser security restrictions:
-- Cannot perform true traceroute (uses simulation)
-- Limited ability to detect all forms of DPI
-- Cannot test raw TCP/UDP ports directly
-- Speed tests may be affected by browser throttling
-
-## Roadmap
-
-- [ ] WebSocket-based real-time tests
-- [ ] More streaming service tests
-- [ ] IPv6-specific diagnostics
-- [ ] Mobile app version
-- [ ] API for programmatic access
-- [ ] Historical data analysis
-- [ ] Export test results (PDF/JSON)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- Node.js 20+
+- Anthropic API key
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Inspired by [dnscheck.tools](https://dnscheck.tools)
-- Speed test methodology from various open source projects
-- DNS testing concepts from the DNS privacy community
-
-## Disclaimer
-
-This tool is for educational and diagnostic purposes only. Results may vary based on network conditions, browser settings, and ISP configurations.
+MIT

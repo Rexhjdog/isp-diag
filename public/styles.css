@@ -6,6 +6,7 @@
   --bg: #fff;
   --bg-header: #ebebeb;
   --bg-status: #ebebeb;
+  --bg-agent: #f5f5f5;
   --fg: #2e3436;
   --fg-muted: #888a85;
   --red: #c00;
@@ -22,6 +23,7 @@
     --bg: #2e3436;
     --bg-header: #222222;
     --bg-status: #222222;
+    --bg-agent: #353b3d;
     --fg: #d3d7cf;
     --fg-muted: #888a85;
     --red: #ef2929;
@@ -91,6 +93,11 @@ header h1 {
   display: inline;
 }
 
+.header-badge {
+  color: var(--violet);
+  font-size: 0.85em;
+}
+
 /* Content area */
 #content {
   padding-top: 5em;
@@ -136,6 +143,93 @@ section {
   padding-left: 4ch;
 }
 
+/* Agent section styling */
+.agent-section {
+  border-left: 2px solid var(--fg-muted);
+  margin-left: 2ch;
+  padding-left: 0;
+}
+
+.agent-section.agent-running {
+  border-left-color: var(--yellow);
+}
+
+.agent-section.agent-complete {
+  border-left-color: var(--green);
+}
+
+.agent-section.agent-error {
+  border-left-color: var(--red);
+}
+
+.agent-header {
+  display: flex;
+  gap: 2ch;
+  align-items: baseline;
+  padding-left: 2ch;
+}
+
+.agent-name {
+  font-weight: bold;
+}
+
+.agent-status {
+  color: var(--fg-muted);
+  font-size: 0.9em;
+}
+
+.agent-status.running {
+  color: var(--yellow);
+}
+
+.agent-status.complete {
+  color: var(--green);
+}
+
+.agent-status.error {
+  color: var(--red);
+}
+
+.agent-tools {
+  padding-left: 4ch;
+  color: var(--fg-muted);
+  font-size: 0.9em;
+}
+
+.agent-findings {
+  padding-left: 4ch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+}
+
+.agent-analysis {
+  padding-left: 4ch;
+  margin-top: 0.3em;
+  color: var(--violet);
+  font-style: italic;
+}
+
+.finding {
+  display: flex;
+  gap: 1ch;
+  flex-wrap: wrap;
+}
+
+.finding-label {
+  color: var(--fg-muted);
+  min-width: 12ch;
+}
+
+.finding-value.good { color: var(--green); }
+.finding-value.bad { color: var(--red); }
+.finding-value.warn { color: var(--yellow); }
+.finding-value.info { color: var(--blue); }
+
+.finding-detail {
+  color: var(--indigo);
+}
+
 /* Mobile */
 @media (max-width: 767px) {
   .section-title {
@@ -151,6 +245,20 @@ section {
   }
 
   .section-body > .entry {
+    padding-left: 2ch;
+  }
+
+  .agent-section {
+    margin-left: 1ch;
+  }
+
+  .agent-header {
+    padding-left: 1ch;
+  }
+
+  .agent-tools,
+  .agent-findings,
+  .agent-analysis {
     padding-left: 2ch;
   }
 }
@@ -228,7 +336,7 @@ section {
   animation: fade-pulse 2s ease-in-out infinite;
 }
 
-/* Action links (run test, etc.) */
+/* Action links */
 .action-link {
   color: var(--blue);
   cursor: pointer;
@@ -274,11 +382,6 @@ section {
   gap: 0.15em;
 }
 
-/* Speed test progress */
-.speed-progress {
-  color: var(--fg-muted);
-}
-
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -294,4 +397,11 @@ section {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--fg);
+}
+
+/* Agent results container */
+#agent-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6em;
 }
